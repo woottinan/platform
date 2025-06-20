@@ -1,0 +1,21 @@
+{
+  "toolchain_dir": "./tools/bin",
+  "cflags": [
+    "-g -Os -std=gnu11 -ffunction-sections -fdata-sections -MMD -fno-fat-lto-objects",
+    "-I{platform}/sdk/cores/arduino",
+    "-I\"{platform}/lib/include\"",
+    "-I\"{platform}/include\""
+  ],
+  "cppflags" : [
+    "-g -Os -std=gnu++11 -fpermissive -fno-exceptions -ffunction-sections -fdata-sections -fno-threadsafe-statics -Wno-error=narrowing -MMD",
+    "-I{platform}/sdk/cores/arduino",
+    "-I\"{platform}/lib/include\"",
+    "-I\"{platform}/include\""
+  ],
+  "ldflags": [
+    "-Os -Wl,--gc-sections -lm"
+  ],
+  "ldlibflag": [
+  ],
+  "ARDUINO_VERSION" : 189
+}
