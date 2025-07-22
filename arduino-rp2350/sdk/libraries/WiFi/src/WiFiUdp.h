@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <Arduino.h>
 #include <Udp.h>
 #include <include/slist.h>
 
@@ -115,4 +116,5 @@ public:
 
 private:
     bool _multicast;
+    bool _dirty;
 };

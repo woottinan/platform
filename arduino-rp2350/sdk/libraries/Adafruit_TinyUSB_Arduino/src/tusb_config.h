@@ -22,8 +22,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef _TUSB_CONFIG_ARDUINO_H_
-#define _TUSB_CONFIG_ARDUINO_H_
+#ifndef TUSB_CONFIG_ARDUINO_H_
+#define TUSB_CONFIG_ARDUINO_H_
 
 #ifdef __cplusplus
  extern "C" {
@@ -39,20 +39,21 @@
   #include "arduino/ports/rp2040/tusb_config_rp2040.h"
 
 #elif defined(ARDUINO_ARCH_ESP32)
-  // Use the BSP sdk/include/arduino_tinyusb/include/tusb_config.h
-  #include <tusb_config.h>
+  // do nothing since we force include "arduino/ports/esp32/tusb_config_esp32.h" in tusb_option.h
 
+#elif defined(ARDUINO_ARCH_CH32) || defined(CH32V20x) || defined(CH32V30x)
+  #include "arduino/ports/ch32/tusb_config_ch32.h"
 #else
   #error TinyUSB Arduino Library does not support your core yet
 #endif
 
 // Debug TinyUSB with Serial1
 #if CFG_TUSB_DEBUG
-#define CFG_TUSB_DEBUG_PRINTF serial1_printf
+#define CFG_TUSB_DEBUG_PRINTF log_printf
 #endif
 
 #ifdef __cplusplus
  }
 #endif
 
-#endif /* _TUSB_CONFIG_ARDUINO_H_ */
+#endif

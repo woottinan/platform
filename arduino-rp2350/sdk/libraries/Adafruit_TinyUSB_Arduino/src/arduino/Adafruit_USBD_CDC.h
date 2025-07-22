@@ -33,6 +33,7 @@
 
 // For ESP32 use USBCDC as it is compatible
 #define Adafruit_USBD_CDC USBCDC
+#define SerialTinyUSB Serial
 
 #else
 
@@ -43,11 +44,7 @@ class Adafruit_USBD_CDC : public Stream, public Adafruit_USBD_Interface {
 public:
   Adafruit_USBD_CDC(void);
 
-  static uint8_t getInstanceCount(void);
-
-  // from Adafruit_USBD_Interface
-  virtual uint16_t getInterfaceDescriptor(uint8_t itfnum, uint8_t *buf,
-                                          uint16_t bufsize);
+  static uint8_t getInstanceCount(void) { return _instance_count; }
 
   void setPins(uint8_t pin_rx, uint8_t pin_tx) {
     (void)pin_rx;
@@ -83,6 +80,10 @@ public:
   using Print::write; // pull in write(str) from Print
   operator bool();
 
+  // from Adafruit_USBD_Interface
+  virtual uint16_t getInterfaceDescriptor(uint8_t itfnum_deprecated,
+                                          uint8_t *buf, uint16_t bufsize);
+
 private:
   enum { INVALID_INSTANCE = 0xffu };
   static uint8_t _instance_count;
@@ -92,16 +93,15 @@ private:
   bool isValid(void) { return _instance != INVALID_INSTANCE; }
 };
 
-// "Serial" is used with TinyUSB CDC
-#if defined(USE_TINYUSB)
-extern Adafruit_USBD_CDC Serial;
+extern Adafruit_USBD_CDC SerialTinyUSB;
+
+// Built-in support "Serial" is assigned to TinyUSB CDC
+// CH32 defines Serial as alias in WSerial.h
+#if defined(USE_TINYUSB) && !defined(ARDUINO_ARCH_CH32)
 #define SerialTinyUSB Serial
 #endif
 
-// Serial is probably used with HW Uart
-#ifndef SerialTinyUSB
 extern Adafruit_USBD_CDC SerialTinyUSB;
-#endif
 
 #endif // else of ESP32
 #endif // __cplusplus

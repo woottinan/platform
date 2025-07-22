@@ -27,7 +27,8 @@ target_sources(FreeRTOS-Kernel INTERFACE
 )
 
 target_include_directories(FreeRTOS-Kernel INTERFACE
-        ${CMAKE_CURRENT_LIST_DIR}/include)
+        ${CMAKE_CURRENT_LIST_DIR}/include
+        ${FREERTOS_CONFIG_FILE_DIRECTORY})
 
 target_link_libraries(FreeRTOS-Kernel INTERFACE
         FreeRTOS-Kernel-Core
@@ -45,9 +46,9 @@ target_compile_definitions(FreeRTOS-Kernel INTERFACE
 add_library(FreeRTOS-Kernel-Static INTERFACE)
 target_compile_definitions(FreeRTOS-Kernel-Static INTERFACE
         configSUPPORT_STATIC_ALLOCATION=1
+        configKERNEL_PROVIDED_STATIC_MEMORY=1
         )
 
-target_sources(FreeRTOS-Kernel-Static INTERFACE ${CMAKE_CURRENT_LIST_DIR}/idle_task_static_memory.c)
 target_link_libraries(FreeRTOS-Kernel-Static INTERFACE FreeRTOS-Kernel)
 
 add_library(FreeRTOS-Kernel-Heap1 INTERFACE)

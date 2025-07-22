@@ -1,4 +1,5 @@
 /*
+  Print.h - Base class that provides print() and println()
   Copyright (c) 2016 Arduino LLC.  All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -8,8 +9,8 @@
 
   This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-  See the GNU Lesser General Public License for more details.
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
@@ -57,7 +58,7 @@ class Print
     }
 
     // default to zero, meaning "a single write may block"
-    // should be overriden by subclasses with buffering
+    // should be overridden by subclasses with buffering
     virtual int availableForWrite() { return 0; }
 
     size_t print(const __FlashStringHelper *);
@@ -90,11 +91,11 @@ class Print
     size_t println(void);
 
     // EFP3 - Add printf() to make life so much easier...
-    size_t printf(const char *format, ...) __attribute__ ((format (printf, 2, 3)));
-    size_t printf_P(const char *format, ...) __attribute__ ((format (printf, 2, 3)));
+    size_t printf(const char *format, ...);
+    size_t printf_P(const char *format, ...);
 
     virtual void flush() { /* Empty implementation for backward compatibility */ }
 };
 
 }
-using namespace arduino;
+using arduino::Print;

@@ -1,4 +1,5 @@
 /*
+  Print.cpp - Base class that provides print() and println()
   Copyright (c) 2014 Arduino.  All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -8,8 +9,8 @@
 
   This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-  See the GNU Lesser General Public License for more details.
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
@@ -334,6 +335,12 @@ size_t Print::printULLNumber(unsigned long long n64, uint8_t base)
   char buf[64];
   uint8_t i = 0;
   uint8_t innerLoops = 0;
+
+  // Special case workaround https://github.com/arduino/ArduinoCore-API/issues/178
+  if (n64 == 0) {
+    write('0');
+    return 1;
+  }
 
   // prevent crash if called with base == 1
   if (base < 2) base = 10;

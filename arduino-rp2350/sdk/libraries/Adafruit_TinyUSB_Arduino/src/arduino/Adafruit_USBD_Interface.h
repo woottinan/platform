@@ -28,20 +28,29 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(ARDUINO_ARCH_CH32) || defined(CH32V20x) || defined(CH32V30x)
+// HACK: required for ch32 core version 1.0.4 or prior, removed when 1.0.5 is
+// released
+extern "C" void yield(void);
+#endif
+
 class Adafruit_USBD_Interface {
 protected:
-  const char *_desc_str;
+  uint8_t _strid;
 
 public:
-  Adafruit_USBD_Interface(void) { _desc_str = NULL; }
+  Adafruit_USBD_Interface(void) { _strid = 0; }
 
   // Get Interface Descriptor
   // Fill the descriptor (if buf is not NULL) and return its length
-  virtual uint16_t getInterfaceDescriptor(uint8_t itfnum, uint8_t *buf,
-                                          uint16_t bufsize) = 0;
+  virtual uint16_t getInterfaceDescriptor(uint8_t itfnum_deprecated,
+                                          uint8_t *buf, uint16_t bufsize) = 0;
+  // Get Interface Descriptor Length
+  uint16_t getInterfaceDescriptorLen() {
+    return getInterfaceDescriptor(0, NULL, 0);
+  }
 
-  void setStringDescriptor(const char *str) { _desc_str = str; }
-  const char *getStringDescriptor(void) { return _desc_str; }
+  void setStringDescriptor(const char *str);
 };
 
 #endif

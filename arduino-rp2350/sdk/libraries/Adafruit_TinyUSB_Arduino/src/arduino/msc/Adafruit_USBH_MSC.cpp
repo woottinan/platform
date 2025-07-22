@@ -22,6 +22,11 @@
  * THE SOFTWARE.
  */
 
+// ESP32 out-of-sync
+#ifdef ARDUINO_ARCH_ESP32
+#include "arduino/ports/esp32/tusb_config_esp32.h"
+#endif
+
 #include "tusb_option.h"
 
 #if CFG_TUH_ENABLED && CFG_TUH_MSC
@@ -29,7 +34,7 @@
 #include "Adafruit_USBH_MSC.h"
 #include "tusb.h"
 
-#if __has_include("SdFat.h")
+#if __has_include("SdFat_Adafruit_Fork.h")
 
 Adafruit_USBH_MSC_BlockDevice::Adafruit_USBH_MSC_BlockDevice() {
   _daddr = _lun = 0;
@@ -59,7 +64,9 @@ bool Adafruit_USBH_MSC_BlockDevice::isBusy(void) { return _busy; }
 
 bool Adafruit_USBH_MSC_BlockDevice::wait_for_io(void) {
   while (_busy) {
-    tuh_task();
+    if (tuh_task_event_ready()) {
+      tuh_task();
+    }
   }
 
   return true;

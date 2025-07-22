@@ -45,7 +45,8 @@ class SDFSConfig : public FSConfig {
 public:
     static constexpr uint32_t FSId = 0x53444653;
 
-    SDFSConfig(uint8_t csPin = 4, uint32_t spi = SD_SCK_MHZ(10), HardwareSPI &port = SPI) : FSConfig(FSId, false), _csPin(csPin), _part(0), _spiSettings(spi), _spi(&port)  { }
+    SDFSConfig(uint8_t csPin = 4, uint32_t spi = SD_SCK_MHZ(10), HardwareSPI &port = SPI) : FSConfig(FSId, false), _sdio(false), _clkPin(255), _csPin(csPin), _cmdPin(255), _dat0Pin(255), _part(0), _spiSettings(spi), _spi(&port)  { }
+    SDFSConfig(uint8_t clkPin, uint8_t cmdPin, uint8_t dataPin) : FSConfig(FSId, false), _sdio(true), _clkPin(clkPin), _cmdPin(cmdPin), _dat0Pin(dataPin), _part(0), _spiSettings(SD_SCK_MHZ(1)), _spi(nullptr)  { }
 
     SDFSConfig setAutoFormat(bool val = true) {
         _autoFormat = val;
@@ -69,7 +70,11 @@ public:
     }
 
     // Inherit _type and _autoFormat
+    bool      _sdio;
+    uint8_t   _clkPin;  // SDIO only;
     uint8_t   _csPin;
+    uint8_t   _cmdPin;  // SDIO only
+    uint8_t   _dat0Pin; // SDIO only
     uint8_t   _part;
     uint32_t  _spiSettings;
     HardwareSPI *_spi;
@@ -92,7 +97,7 @@ public:
         return _mounted ? _fs.rename(pathFrom, pathTo) : false;
     }
 
-    bool info64(FSInfo64& info) override {
+    bool info(FSInfo& info) override {
         if (!_mounted) {
             DEBUGV("SDFS::info: FS not mounted\n");
             return false;
@@ -103,26 +108,6 @@ public:
         info.maxPathLength = 255; // TODO ?
         info.totalBytes = (uint64_t)_fs.vol()->clusterCount() * (uint64_t)info.blockSize;
         info.usedBytes = info.totalBytes - ((uint64_t)_fs.vol()->freeClusterCount() * (uint64_t)_fs.vol()->bytesPerCluster());
-        return true;
-    }
-
-    bool info(FSInfo& info) override {
-        FSInfo64 i;
-        if (!info64(i)) {
-            return false;
-        }
-        info.blockSize     = i.blockSize;
-        info.pageSize      = i.pageSize;
-        info.maxOpenFiles  = i.maxOpenFiles;
-        info.maxPathLength = i.maxPathLength;
-#ifdef DEBUG_ESP_PORT
-        if (i.totalBytes > std::numeric_limits<uint32_t>::max()) {
-            // This catches both total and used cases, since used must always be < total.
-            DEBUG_ESP_PORT.printf_P(PSTR("WARNING: SD card size overflow (%lld >= 4GB).  Please update source to use info64().\n"), (long long)i.totalBytes);
-        }
-#endif
-        info.totalBytes    = (size_t)i.totalBytes;
-        info.usedBytes     = (size_t)i.usedBytes;
         return true;
     }
 
@@ -151,11 +136,20 @@ public:
         if (_mounted) {
             return true;
         }
-        SdSpiConfig ssc(_cfg._csPin, SHARED_SPI, _cfg._spiSettings, _cfg._spi);
-        _mounted = _fs.begin(ssc);
-        if (!_mounted && _cfg._autoFormat) {
-            format();
+        if (!_cfg._sdio) {
+            SdSpiConfig ssc(_cfg._csPin, SHARED_SPI, _cfg._spiSettings, _cfg._spi);
             _mounted = _fs.begin(ssc);
+            if (!_mounted && _cfg._autoFormat) {
+                format();
+                _mounted = _fs.begin(ssc);
+            }
+        } else {
+            SdioConfig ssc(_cfg._clkPin, _cfg._cmdPin, _cfg._dat0Pin);
+            _mounted = _fs.begin(ssc);
+            if (!_mounted && _cfg._autoFormat) {
+                format();
+                _mounted = _fs.begin(ssc);
+            }
         }
         FsDateTime::setCallback(dateTimeCB);
         return _mounted;
@@ -167,6 +161,33 @@ public:
     }
 
     bool format() override;
+
+    bool stat(const char *path, FSStat *st) override {
+        if (!_mounted || !path || !path[0]) {
+            return false;
+        }
+        bzero(st, sizeof(*st));
+        FsFile f = _fs.open(path, O_RDONLY);
+        if (!f) {
+            return false;
+        }
+        st->size = f.fileSize();
+        st->blocksize = clusterSize();
+        st->isDir = f.isDir();
+        if (st->isDir) {
+            st->size = 0;
+        }
+        uint16_t date;
+        uint16_t time;
+        if (f.getCreateDateTime(&date, &time)) {
+            st->ctime = FatToTimeT(date, time);
+        }
+        if (f.getAccessDateTime(&date, &time)) {
+            st->atime = FatToTimeT(date, time);
+        }
+        f.close();
+        return true;
+    }
 
     // The following are not common FS interfaces, but are needed only to
     // support the older SD.h exports
@@ -183,7 +204,7 @@ public:
         return _fs.vol()->clusterCount();
     }
     size_t totalBlocks() {
-        return (totalClusters() / blocksPerCluster());
+        return (totalClusters() * blocksPerCluster());
     }
     size_t clusterSize() {
         return _fs.vol()->bytesPerCluster();
@@ -264,7 +285,7 @@ protected:
 
 class SDFSFileImpl : public FileImpl {
 public:
-    SDFSFileImpl(SDFSImpl *fs, std::shared_ptr<File32> fd, const char *name)
+    SDFSFileImpl(SDFSImpl *fs, std::shared_ptr<FsFile> fd, const char *name)
         : _fs(fs), _fd(fd), _opened(true) {
         _name = std::shared_ptr<char>(new char[strlen(name) + 1], std::default_delete<char[]>());
         strcpy(_name.get(), name);
@@ -276,7 +297,7 @@ public:
     }
 
     int availableForWrite() override {
-        return _opened ? _fd->availableSpaceForWrite() : 0;
+        return _opened ? _fd->availableForWrite() : 0;
     }
 
     size_t write(const uint8_t *buf, size_t size) override {
@@ -365,9 +386,9 @@ public:
     time_t getLastWrite() override {
         time_t ftime = 0;
         if (_opened && _fd) {
-            DirFat_t tmp;
-            if (_fd.get()->dirEntry(&tmp)) {
-                ftime = SDFSImpl::FatToTimeT(*(uint16_t*)tmp.modifyDate, *(uint16_t*)tmp.modifyTime);
+            uint16_t date, time;
+            if (_fd.get()->getModifyDateTime(&date, &time)) {
+                ftime = SDFSImpl::FatToTimeT(date, time);
             }
         }
         return ftime;
@@ -376,9 +397,9 @@ public:
     time_t getCreationTime() override {
         time_t ftime = 0;
         if (_opened && _fd) {
-            DirFat_t tmp;
-            if (_fd.get()->dirEntry(&tmp)) {
-                ftime = SDFSImpl::FatToTimeT(*(uint16_t*)tmp.createDate, *(uint16_t*)tmp.createTime);
+            uint16_t date, time;
+            if (_fd.get()->getCreateDateTime(&date, &time)) {
+                ftime = SDFSImpl::FatToTimeT(date, time);
             }
         }
         return ftime;
@@ -386,14 +407,14 @@ public:
 
 protected:
     SDFSImpl*                _fs;
-    std::shared_ptr<File32>  _fd;
+    std::shared_ptr<FsFile>  _fd;
     std::shared_ptr<char>    _name;
     bool                     _opened;
 };
 
 class SDFSDirImpl : public DirImpl {
 public:
-    SDFSDirImpl(const String& pattern, SDFSImpl* fs, std::shared_ptr<File32> dir, const char *dirPath = nullptr)
+    SDFSDirImpl(const String& pattern, SDFSImpl* fs, std::shared_ptr<FsFile> dir, const char *dirPath = nullptr)
         : _pattern(pattern), _fs(fs), _dir(dir), _valid(false), _dirPath(nullptr) {
         if (dirPath) {
             _dirPath = std::shared_ptr<char>(new char[strlen(dirPath) + 1], std::default_delete<char[]>());
@@ -458,19 +479,22 @@ public:
     bool next() override {
         const int n = _pattern.length();
         do {
-            File32 file;
+            FsFile file;
             file.openNext(_dir.get(), O_READ);
             if (file) {
                 _valid = 1;
                 _size = file.fileSize();
                 _isFile = file.isFile();
                 _isDirectory = file.isDir();
-                DirFat_t tmp;
-                if (file.dirEntry(&tmp)) {
-                    _time = SDFSImpl::FatToTimeT(*(uint16_t*)tmp.modifyDate, *(uint16_t*)tmp.modifyTime);
-                    _creation = SDFSImpl::FatToTimeT(*(uint16_t*)tmp.createDate, *(uint16_t*)tmp.createTime);
+                uint16_t date, time;
+                if (file.getModifyDateTime(&date, &time)) {
+                    _time = SDFSImpl::FatToTimeT(date, time);
                 } else {
                     _time = 0;
+                }
+                if (file.getCreateDateTime(&date, &time)) {
+                    _creation = SDFSImpl::FatToTimeT(date, time);
+                } else {
                     _creation = 0;
                 }
                 file.getName(_lfn, sizeof(_lfn));
@@ -491,9 +515,9 @@ public:
 protected:
     String                  _pattern;
     SDFSImpl*               _fs;
-    std::shared_ptr<File32> _dir;
+    std::shared_ptr<FsFile> _dir;
     bool                    _valid;
-    char                    _lfn[64];
+    char                    _lfn[256];
     time_t                  _time;
     time_t                  _creation;
     std::shared_ptr<char>   _dirPath;

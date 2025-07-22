@@ -1,15 +1,24 @@
 {
   "toolchain_dir": "./tools",
-  "cflags": [
-
-  ],
-  "cppflags" : [
-    
-  ],
-  "ldflags": [
-    
-  ],
-  "ldlibflag": [
-  ],
-  "ARDUINO_VERSION" : 189
+  "cflags": [],
+  "cppflags": [],
+  "ldflags": [],
+  "ldlibflag": [],
+  "ARDUINO_VERSION": 189,
+  
+  "build": {
+    "arch": "RP2350",
+    "f_cpu": "150000000L",
+    "flash_total": "2097152",
+    "flash_length": "2093056",
+    "eeprom_start": "270528512",
+    "fs_start": "270528512",
+    "fs_end": "270528512",
+    "ram_length": "256k",
+    "variant": "rp2350",
+    "wificc": "-DWIFICC=CYW43_COUNTRY_WORLDWIDE",
+    "libpico": "libpico.a",
+    "libpicow": "libpicow-noipv6-nobtc-noble.a",
+    "boot2": "boot2_generic_03h_4_padded_checksum"
+  }
 }

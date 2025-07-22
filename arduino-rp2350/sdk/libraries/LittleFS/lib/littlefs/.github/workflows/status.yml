@@ -4,17 +4,22 @@ on:
     workflows: [test]
     types: [completed]
 
+defaults:
+  run:
+    shell: bash -euv -o pipefail {0}
+
 jobs:
+  # forward custom statuses
   status:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      # custom statuses?
-      - uses: dawidd6/action-download-artifact@v2
+      - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          workflow: ${{github.event.workflow_run.name}}
-          run_id: ${{github.event.workflow_run.id}}
-          name: status
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          run-id: ${{github.event.workflow_run.id}}
+          pattern: '{status,status-*}'
+          merge-multiple: true
           path: status
       - name: update-status
         continue-on-error: true
@@ -50,6 +55,48 @@ jobs:
                 state: env.STATE,
                 context: env.CONTEXT,
                 description: env.DESCRIPTION,
-                target_url: env.TARGET_URL}' \
-                | tee /dev/stderr)"
+                target_url: env.TARGET_URL,
+              }' | tee /dev/stderr)"
+          done
+
+  # forward custom pr-comments
+  comment:
+    runs-on: ubuntu-latest
+
+    # only run on success (we don't want garbage comments!)
+    if: ${{github.event.workflow_run.conclusion == 'success'}}
+
+    steps:
+      # generated comment?
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          run-id: ${{github.event.workflow_run.id}}
+          pattern: '{comment,comment-*}'
+          merge-multiple: true
+          path: comment
+      - name: update-comment
+        continue-on-error: true
+        run: |
+          ls comment
+          for s in $(shopt -s nullglob ; echo comment/*.json)
+          do
+            export NUMBER="$(jq -er '.number' $s)"
+            export BODY="$(jq -er '.body' $s)"
+
+            # check that the comment was from the most recent commit on the
+            # pull request
+            [ "$(curl -sS -H "authorization: token ${{secrets.BOT_TOKEN}}" \
+                "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pulls/$NUMBER" \
+                | jq -er '.head.sha')" \
+              == ${{github.event.workflow_run.head_sha}} ] || continue
+
+            # update comment
+            curl -sS -X POST -H "authorization: token ${{secrets.BOT_TOKEN}}" \
+              "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/issues/`
+                `$NUMBER/comments" \
+              -d "$(jq -n '{
+                body: env.BODY,
+              }' | tee /dev/stderr)"
           done

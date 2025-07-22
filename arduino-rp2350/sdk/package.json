@@ -1,13 +1,13 @@
 {
   "name": "framework-arduinopico",
-  "version": "1.30301.0",
-  "description": "Arduino Wiring-based Framework (RPi Pico RP2040)",
+  "version": "1.40600.0",
+  "description": "Arduino Wiring-based Framework (RPi Pico RP2040, RP2350)",
   "keywords": [
     "framework",
     "arduino",
-    "Cortex-M",
+    "Cortex-M33",
     "Raspberry Pi",
-    "RP2040"
+    "RP2350"
   ],
   "homepage": "https://arduino-pico.readthedocs.io/en/latest/",
   "repository": {

@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2020 Arduino.  All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 /**************************************************************************************
@@ -8,8 +10,8 @@
 
 #include <catch.hpp>
 
-#include <String.h>
-#include <IPAddress.h>
+#include <api/String.h>
+#include <api/IPAddress.h>
 
 /**************************************************************************************
  * TEST CODE

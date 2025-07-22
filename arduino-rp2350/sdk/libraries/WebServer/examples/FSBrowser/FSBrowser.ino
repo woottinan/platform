@@ -154,9 +154,12 @@ void handleStatus() {
   if (fsOK) {
     fileSystem->info(fs_info);
     json += F("\"true\", \"totalBytes\":\"");
-    json += fs_info.totalBytes;
+    char b64[32];
+    sprintf(b64, "%llu", fs_info.totalBytes);
+    json += b64;
     json += F("\", \"usedBytes\":\"");
-    json += fs_info.usedBytes;
+    sprintf(b64, "%llu", fs_info.usedBytes);
+    json += b64;
     json += "\"";
   } else {
     json += "\"false\"";
@@ -213,9 +216,9 @@ void handleFileList() {
       // as an HTTP chunk
       Serial.println(output);
       server.sendContent(output);
-      output = ',';
+      output = ",";
     } else {
-      output = '[';
+      output = "[";
     }
 
     output += "{\"type\":\"";

@@ -9,9 +9,9 @@
 
 extern "C" {
 
-#include "FreeRTOSConfig.h" /* to get configNUM_CORES */
-#ifndef configNUM_CORES
-#define configNUM_CORES 1
+#include "FreeRTOSConfig.h" /* to get configNUMBER_OF_CORES */
+#ifndef configNUMBER_OF_CORES
+#define configNUMBER_OF_CORES 1
 #endif
 
 void __xcore_interrupt_permitted_ugs_vPortStartSchedulerOnCore(void);
@@ -20,7 +20,7 @@ void __xcore_interrupt_permitted_ugs_vPortStartSchedulerOnCore(void);
 
 void vPortStartSMPScheduler( void )
 {
-    par (int i = 0; i < configNUM_CORES; i++) {
+    par (int i = 0; i < configNUMBER_OF_CORES; i++) {
         __xcore_interrupt_permitted_ugs_vPortStartSchedulerOnCore();
     }
 }

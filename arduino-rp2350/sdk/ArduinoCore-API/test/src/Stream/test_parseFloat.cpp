@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2020 Arduino.  All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 /**************************************************************************************
@@ -11,6 +13,8 @@
 #include <StreamMock.h>
 
 #include <float.h>
+
+using namespace arduino;
 
 /**************************************************************************************
  * TEST CODE

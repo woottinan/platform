@@ -1,3 +1,4 @@
+# PICO_CMAKE_CONFIG: PICO_TINYUSB_PATH, Path to an alternative version of tinyusb overriding the version in pico-sdk/lib/tinyusb. Can be passed to cmake or set in your environment, type=string, group=tinyusb_device
 if (DEFINED ENV{PICO_TINYUSB_PATH} AND (NOT PICO_TINYUSB_PATH))
     set(PICO_TINYUSB_PATH $ENV{PICO_TINYUSB_PATH})
     message("Using PICO_TINYUSB_PATH from environment ('${PICO_TINYUSB_PATH}')")
@@ -44,6 +45,7 @@ if (EXISTS ${PICO_TINYUSB_PATH}/${TINYUSB_TEST_PATH})
     target_link_libraries(tinyusb_host INTERFACE tinyusb_host_base tinyusb_common)
 
     pico_add_library(tinyusb_board)
+    target_include_directories(tinyusb_board INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
     target_link_libraries(tinyusb_board INTERFACE tinyusb_bsp)
 
     # Override suppress_tinyusb_warnings to add suppression of (falsely) reported GCC 11.2 warnings
@@ -54,6 +56,13 @@ if (EXISTS ${PICO_TINYUSB_PATH}/${TINYUSB_TEST_PATH})
                     ${PICO_TINYUSB_PATH}/src/portable/raspberrypi/rp2040/rp2040_usb.c
                     PROPERTIES
                     COMPILE_FLAGS "-Wno-stringop-overflow -Wno-array-bounds")
+            # suppress warning in our copy of LWIP in case it is used by TinyUSB
+            set_source_files_properties(
+                    ${PICO_LWIP_PATH}/src/core/tcp_in.c
+                    ${PICO_LWIP_PATH}/src/core/tcp_out.c
+                    ${PICO_LWIP_PATH}/src/core/pbuf.c
+                    PROPERTIES
+                    COMPILE_FLAGS "-Wno-conversion")
         endif()
     endfunction()
 

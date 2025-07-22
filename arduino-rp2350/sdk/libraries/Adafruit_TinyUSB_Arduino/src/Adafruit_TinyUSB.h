@@ -25,13 +25,6 @@
 #ifndef ADAFRUIT_TINYUSB_H_
 #define ADAFRUIT_TINYUSB_H_
 
-// Error message for Core that must select TinyUSB via menu
-#if !defined(USE_TINYUSB) &&                                                   \
-    (defined(ARDUINO_ARCH_SAMD) ||                                             \
-     (defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_ARCH_MBED)))
-#error TinyUSB is not selected, please select it in "Tools->Menu->USB Stack"
-#endif
-
 #include "tusb_option.h"
 
 // Device
@@ -57,6 +50,10 @@
 
 #if CFG_TUD_VENDOR
 #include "arduino/webusb/Adafruit_USBD_WebUSB.h"
+#endif
+
+#if CFG_TUD_VIDEO
+#include "arduino/video/Adafruit_USBD_Video.h"
 #endif
 
 // Initialize device hardware, stack, also Serial as CDC

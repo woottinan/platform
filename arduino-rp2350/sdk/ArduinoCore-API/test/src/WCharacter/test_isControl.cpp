@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2020 Arduino.  All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 /**************************************************************************************
@@ -10,7 +12,7 @@
 
 #include <vector>
 
-#include <WCharacter.h>
+#include <api/WCharacter.h>
 
 /**************************************************************************************
  * CONSTANTS

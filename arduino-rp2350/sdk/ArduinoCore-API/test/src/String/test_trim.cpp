@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2020 Arduino.  All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 /**************************************************************************************
@@ -8,7 +10,7 @@
 
 #include <catch.hpp>
 
-#include <String.h>
+#include <api/String.h>
 
 #include "StringPrinter.h"
 
@@ -30,7 +32,7 @@ TEST_CASE ("Testing String::trim with space at the end", "[String-trim-02]")
   REQUIRE(str == "hello");
 }
 
-TEST_CASE ("Testing String::trim with space at both beginng and end", "[String-trim-03]")
+TEST_CASE ("Testing String::trim with space at both beginning and end", "[String-trim-03]")
 {
   arduino::String str("  hello  ");
   str.trim();

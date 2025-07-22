@@ -41,9 +41,32 @@ function ci_tests_setup {
 }
 
 function ci_tests_build {
-    make $MAKEOPTS -C tests/sdio
+    for test in `ls -d tests/*/`; do
+        make $MAKEOPTS -C $test
+    done
 }
 
 function ci_tests_run {
-    make $MAKEOPTS -C tests/sdio test
+    for test in `ls -d tests/*/`; do
+        make $MAKEOPTS -C $test test
+    done
+}
+
+########################################################################################
+# tests with clang
+
+function ci_tests_clang_setup {
+    sudo apt-get install clang gcc-multilib
+}
+
+function ci_tests_clang_build {
+    for test in `ls -d tests/*/`; do
+        make $MAKEOPTS CC=clang -C $test
+    done
+}
+
+function ci_tests_clang_run {
+    for test in `ls -d tests/*/`; do
+        make $MAKEOPTS CC=clang -C $test test
+    done
 }

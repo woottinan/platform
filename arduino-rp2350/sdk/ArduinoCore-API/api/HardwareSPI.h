@@ -1,4 +1,5 @@
 /*
+  HardwareSPI.h - Hardware SPI interface for Arduino
   Copyright (c) 2018 Arduino LLC.  All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -8,8 +9,8 @@
 
   This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-  See the GNU Lesser General Public License for more details.
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
@@ -110,18 +111,8 @@ class HardwareSPI
     virtual uint16_t transfer16(uint16_t data) = 0;
     virtual void transfer(void *buf, size_t count) = 0;
 
-    // New transfer API.  If either send or recv == nullptr then ignore it
-    virtual void transfer(const void *send, void *recv, size_t count) {
-        const uint8_t *out = (const uint8_t *)send;
-        uint8_t *in = (uint8_t *)recv;
-        for (size_t i = 0; i < count; i++) {
-            uint8_t t = out ? *(out++) : 0xff;
-            t = transfer(t);
-            if (in) {
-                *(in++) = t;
-            }
-        }
-    }
+    // EFP3 - Additional block-based versions we implement
+    virtual void transfer(const void *txbuf, void *rxbuf, size_t count) = 0;
 
     // Transaction Functions
     virtual void usingInterrupt(int interruptNumber) = 0;
@@ -137,7 +128,7 @@ class HardwareSPI
     virtual void end() = 0;
 };
 
-// Alias SPIClass to HardwareSPI since it's already the defacto standard for SPI classe name
+// Alias SPIClass to HardwareSPI since it's already the defacto standard for SPI class name
 typedef HardwareSPI SPIClass;
 
 }

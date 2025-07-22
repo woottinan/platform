@@ -1,5 +1,25 @@
+/*
+  Common.h - Common definitions for Arduino core
+  Copyright (c) 2017 Arduino LLC. All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+*/
+
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C"{
@@ -16,14 +36,16 @@ typedef enum {
 } PinStatus;
 
 typedef enum {
-  INPUT           = 0x0,
-  OUTPUT          = 0x1,
-  INPUT_PULLUP    = 0x2,
-  INPUT_PULLDOWN  = 0x3,
-  OUTPUT_2MA      = 0x4,
-  OUTPUT_4MA      = 0x5,
-  OUTPUT_8MA      = 0x6,
-  OUTPUT_12MA     = 0x7,
+  INPUT            = 0x0,
+  OUTPUT           = 0x1,
+  INPUT_PULLUP     = 0x2,
+  INPUT_PULLDOWN   = 0x3,
+  OUTPUT_OPENDRAIN = 0x4,
+
+  OUTPUT_2MA       = 0x5,
+  OUTPUT_4MA       = 0x6,
+  OUTPUT_8MA       = 0x7,
+  OUTPUT_12MA      = 0x8,
 } PinMode;
 
 typedef enum {
@@ -69,7 +91,7 @@ typedef void (*voidFuncPtrParam)(void*);
 #define bitSet(value, bit) ((value) |= (1UL << (bit)))
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitToggle(value, bit) ((value) ^= (1UL << (bit)))
-#define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
+#define bitWrite(value, bit, bitvalue) ((bitvalue) ? bitSet((value), (bit)) : bitClear((value), (bit)))
 
 #ifndef bit
 #define bit(b) (1UL << (b))
@@ -89,7 +111,7 @@ int atexit(void (*func)()) __attribute__((weak));
 int main() __attribute__((weak));
 
 #ifdef EXTENDED_PIN_MODE
-// Platforms who wnat to declare more than 256 pins need to define EXTENDED_PIN_MODE globally
+// Platforms who want to declare more than 256 pins need to define EXTENDED_PIN_MODE globally
 typedef uint32_t pin_size_t;
 #else
 typedef uint8_t pin_size_t;
